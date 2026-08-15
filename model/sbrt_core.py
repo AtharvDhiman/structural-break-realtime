@@ -9,12 +9,30 @@ an incremental per-point scorer whose output is bit-identical to a batch pass.
 Depends only on numpy / statsmodels / arch. No global RNG is used, so results are
 deterministic and independent of series processing order.
 """
+import os
+# Single-thread BLAS BEFORE numpy loads: guarantees deterministic linear-algebra
+# (the 1e-8 requirement) and avoids CPU over-allocation under the platform's
+# per-series process parallelism.
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+           "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+
 import math
 import warnings
+import contextlib
 import numpy as np
 from statsmodels.tsa.ar_model import AutoReg
 
 warnings.filterwarnings("ignore")
+
+# Runtime BLAS-thread limiter (robust even if BLAS was imported before us).
+try:
+    from threadpoolctl import threadpool_limits
+    def _single_thread():
+        return threadpool_limits(limits=1)
+except Exception:
+    def _single_thread():
+        return contextlib.nullcontext()
 
 GRID = np.array([5, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 400, 500, 700, 1000])
 MIN_WINDOWS = 20
@@ -29,11 +47,12 @@ def fit_params(hist, p=AR_ORDER):
     hist = np.asarray(hist, dtype=np.float64)
     H = len(hist)
     p = min(p, max(1, H // 100))
-    ar = AutoReg(hist, lags=p, trend="c", old_names=False).fit()
-    c = float(ar.params[0])
-    phi = np.asarray(ar.params[1:], dtype=np.float64)
-    e_hist = np.asarray(ar.resid, dtype=np.float64)
-    omega, alpha, beta = _fit_garch(e_hist)
+    with _single_thread():                      # deterministic BLAS for the fits
+        ar = AutoReg(hist, lags=p, trend="c", old_names=False).fit()
+        c = float(ar.params[0])
+        phi = np.asarray(ar.params[1:], dtype=np.float64)
+        e_hist = np.asarray(ar.resid, dtype=np.float64)
+        omega, alpha, beta = _fit_garch(e_hist)
     h_hist = _garch_var_path(e_hist, omega, alpha, beta)
     z_hist = e_hist / np.sqrt(h_hist)
     return {

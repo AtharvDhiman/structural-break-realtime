@@ -7,6 +7,11 @@ infer(): stream per-step break probabilities, one score per online observation,
 using the incremental scorer in sbrt_core (O(1) per point after a per-series fit).
 """
 import os
+# Pin BLAS to one thread before numpy loads (determinism + parallelism safety).
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+           "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+
 from typing import List, Tuple, Iterable, Optional
 
 import numpy as np
