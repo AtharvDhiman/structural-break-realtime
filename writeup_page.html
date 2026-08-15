@@ -1,0 +1,290 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watching for a Break</title>
+<style>
+  :root{
+    --bg:#F1F2F0; --surface:#FBFBFA; --surface-2:#EAEBE8;
+    --ink:#15191C; --ink-soft:#3B424A; --muted:#68717B; --faint:#9AA3AB;
+    --rule:#DDDED9; --rule-strong:#C6C8C1;
+    --signal:#0E6E77; --signal-deep:#0A555C; --break:#B8562A;
+    --code-bg:#ECEDE9;
+    --measure:66ch;
+    --serif:Charter,"Bitstream Charter","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#101315; --surface:#171B1E; --surface-2:#1E2327;
+      --ink:#E7EAE7; --ink-soft:#C2C8C6; --muted:#8C9599; --faint:#5D666B;
+      --rule:#282D31; --rule-strong:#363C41;
+      --signal:#38A9B2; --signal-deep:#2A8990; --break:#DB8451;
+      --code-bg:#1C2125;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#101315; --surface:#171B1E; --surface-2:#1E2327;
+    --ink:#E7EAE7; --ink-soft:#C2C8C6; --muted:#8C9599; --faint:#5D666B;
+    --rule:#282D31; --rule-strong:#363C41;
+    --signal:#38A9B2; --signal-deep:#2A8990; --break:#DB8451;
+    --code-bg:#1C2125;
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--serif); font-size:19px; line-height:1.65;
+    font-feature-settings:"kern" 1,"liga" 1;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:0 24px}
+  .col{max-width:var(--measure)}
+
+  /* ---- masthead ---- */
+  header.top{padding:72px 0 40px}
+  .eyebrow{
+    font-family:var(--mono); font-size:12.5px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--signal-deep); margin:0 0 22px;
+    display:flex; gap:12px; align-items:center;
+  }
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--rule-strong)}
+  h1{
+    font-family:var(--serif); font-weight:600; letter-spacing:-.015em;
+    font-size:clamp(40px,7vw,60px); line-height:1.04; margin:0 0 20px;
+    text-wrap:balance;
+  }
+  .standfirst{
+    font-size:21px; color:var(--ink-soft); line-height:1.5; margin:0 0 8px;
+    max-width:38ch; font-style:italic;
+  }
+  .byline{
+    font-family:var(--mono); font-size:13px; color:var(--muted);
+    margin-top:30px; padding-top:18px; border-top:1px solid var(--rule);
+    display:flex; flex-wrap:wrap; gap:8px 22px;
+  }
+  .byline b{color:var(--ink-soft); font-weight:500}
+
+  /* ---- score ladder ---- */
+  .ladder{
+    margin:44px 0 8px; padding:30px 30px 24px; background:var(--surface);
+    border:1px solid var(--rule); border-radius:12px;
+  }
+  .ladder h2{
+    font-family:var(--mono); font-size:12.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); font-weight:500; margin:0 0 22px;
+  }
+  .rungs{display:flex; flex-direction:column; gap:14px}
+  .rung{display:grid; grid-template-columns:132px 1fr 68px; align-items:center; gap:16px}
+  .rung .lbl{font-size:15px; color:var(--ink-soft); line-height:1.25}
+  .rung .bar{position:relative; height:12px; background:var(--surface-2); border-radius:6px; overflow:hidden}
+  .rung .fill{position:absolute; inset:0 auto 0 0; border-radius:6px; background:var(--signal)}
+  .rung.peak .fill{background:linear-gradient(90deg,var(--signal),var(--signal-deep))}
+  .rung .val{
+    font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:16px;
+    text-align:right; color:var(--ink); font-weight:600;
+  }
+  .rung.base .val{color:var(--muted); font-weight:400}
+  .ladder .foot{font-size:13.5px; color:var(--muted); margin:20px 0 0; font-style:italic}
+
+  /* ---- body ---- */
+  section{padding:14px 0}
+  h2.sec{
+    font-family:var(--serif); font-weight:600; font-size:27px; letter-spacing:-.01em;
+    margin:46px 0 4px; line-height:1.2; text-wrap:balance;
+  }
+  .sec-eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--signal-deep); margin:40px 0 0;
+  }
+  h2.sec + p{margin-top:14px}
+  p{margin:18px 0; max-width:var(--measure)}
+  p, li{color:var(--ink)}
+  strong{font-weight:600}
+  em{font-style:italic}
+  a{color:var(--signal-deep); text-underline-offset:2px}
+  code{
+    font-family:var(--mono); font-size:.82em; background:var(--code-bg);
+    padding:.12em .4em; border-radius:4px; color:var(--ink-soft);
+  }
+  .lead{font-size:20.5px; color:var(--ink-soft)}
+  ul{max-width:var(--measure); padding-left:0; list-style:none; margin:18px 0}
+  ul li{position:relative; padding-left:26px; margin:12px 0}
+  ul li::before{
+    content:""; position:absolute; left:4px; top:.62em; width:7px; height:7px;
+    background:var(--signal); border-radius:2px; transform:rotate(45deg);
+  }
+  blockquote{
+    margin:26px 0; padding:4px 0 4px 24px; border-left:3px solid var(--break);
+    color:var(--ink-soft); font-style:italic; max-width:var(--measure);
+  }
+
+  /* ---- results table ---- */
+  .tablecard{margin:24px 0; border:1px solid var(--rule); border-radius:12px; overflow:hidden; max-width:var(--measure)}
+  table{border-collapse:collapse; width:100%; font-size:16px}
+  caption{
+    text-align:left; font-family:var(--mono); font-size:12px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--muted); padding:16px 20px; background:var(--surface);
+    border-bottom:1px solid var(--rule);
+  }
+  th,td{padding:12px 20px; text-align:left; border-bottom:1px solid var(--rule)}
+  thead th{font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:500}
+  tbody td{color:var(--ink-soft)}
+  tbody tr:last-child td{border-bottom:none}
+  td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:right; color:var(--ink)}
+  tr.win td{background:var(--surface)}
+  tr.win td.num{color:var(--signal-deep); font-weight:700}
+  .step{font-family:var(--mono); font-size:12px; color:var(--faint)}
+
+  /* ---- pull metric ---- */
+  .metricfig{
+    margin:30px 0; padding:26px 28px; background:var(--surface); border:1px solid var(--rule);
+    border-radius:12px; max-width:var(--measure);
+  }
+  .metricfig .cap{font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 14px}
+  .metricfig svg{display:block; width:100%; height:auto}
+  .metricfig .note{font-size:13.5px; color:var(--muted); margin:14px 0 0; font-style:italic}
+
+  hr.div{border:none; border-top:1px solid var(--rule); max-width:var(--measure); margin:40px 0}
+
+  footer{margin:60px 0 90px; padding-top:24px; border-top:1px solid var(--rule-strong); max-width:var(--measure)}
+  footer p{font-size:15px; color:var(--muted); font-style:italic}
+
+  @media (max-width:560px){
+    body{font-size:17.5px}
+    .rung{grid-template-columns:104px 1fr 60px; gap:10px}
+    .rung .lbl{font-size:13px}
+    .ladder{padding:22px 18px}
+    th,td{padding:10px 14px}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .rung .fill{transition:width .9s cubic-bezier(.2,.7,.2,1)}
+  }
+</style>
+
+<div class="wrap">
+  <header class="top col">
+    <p class="eyebrow">ADIA Lab · Structural Break · Real-Time</p>
+    <h1>Watching for a break in real time</h1>
+    <p class="standfirst">How I built a calibrated, debuggable break detector — and what the metric taught me before any modelling did.</p>
+    <div class="byline">
+      <span><b>Task</b> univariate change-point, streamed</span>
+      <span><b>Metric</b> Time-Stratified AUC</span>
+      <span><b>Result</b> 0.575 held-out</span>
+    </div>
+  </header>
+
+  <div class="ladder col" role="img" aria-label="Score progression from 0.518 baseline to 0.575 stacker">
+    <h2>What each idea was worth</h2>
+    <div class="rungs">
+      <div class="rung base">
+        <span class="lbl">Raw cumulative deviation</span>
+        <span class="bar"><span class="fill" style="width:12%"></span></span>
+        <span class="val">0.518</span>
+      </div>
+      <div class="rung">
+        <span class="lbl">+ per-series null calibration</span>
+        <span class="bar"><span class="fill" style="width:37%"></span></span>
+        <span class="val">0.533</span>
+      </div>
+      <div class="rung">
+        <span class="lbl">AR+GARCH residuals, best statistic</span>
+        <span class="bar"><span class="fill" style="width:73%"></span></span>
+        <span class="val">0.557</span>
+      </div>
+      <div class="rung peak">
+        <span class="lbl">+ LightGBM stack</span>
+        <span class="bar"><span class="fill" style="width:100%"></span></span>
+        <span class="val">0.575</span>
+      </div>
+    </div>
+    <p class="foot">Every number is on held-out series. The gap from 0.5 is small because the task is hard; the gap between rungs is where the reasoning lives.</p>
+  </div>
+
+  <section class="col">
+    <p class="lead">You're handed a univariate time series in two parts: a long historical stretch with no break in it, then a shorter online stretch fed to you one point at a time. After every point you emit a number in [0,1] — your running confidence that a permanent break has already happened.</p>
+    <p>The breaks are a mixed bag: shifts in mean, in variance, in distributional shape, in dependence structure. Some series never break. Half of mine did. I was after a solid, debuggable submission and a clear story, not a leaderboard crown — so this is a working note, dead ends included.</p>
+    <p>The thing that decided everything else was the scoring metric, so that's where I'll start.</p>
+  </section>
+
+  <section class="col">
+    <p class="sec-eyebrow">00 — The metric</p>
+    <h2 class="sec">The metric is the whole game</h2>
+    <p>The score is a Time-Stratified AUC. At each online step you take the live series, label the ones that have already broken as positives, compute an ordinary cross-sectional AUC across series, and average those per-step AUCs with a weight <code>w(t) = n_pos(t) · n_neg(t)</code>.</p>
+    <p>That weight is the same quantity sitting in the denominator of AUC at that step — the number of positive–negative pairs. So <code>w(t)·AUC(t)</code> is just the count of correctly-ordered pairs, and the whole thing collapses to one number: total correctly-ordered pairs across all steps, over total pairs. It's a single micro-averaged AUC where comparisons only ever happen between series at the <em>same</em> step.</p>
+
+    <div class="metricfig">
+      <p class="cap">Where the metric's weight actually sits</p>
+      <svg viewBox="0 0 560 150" aria-label="Metric weight peaks in the middle of the online segment and is near zero at both ends">
+        <defs>
+          <linearGradient id="wfill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" style="stop-color:var(--signal);stop-opacity:0.30"/>
+            <stop offset="1" style="stop-color:var(--signal);stop-opacity:0.03"/>
+          </linearGradient>
+        </defs>
+        <line x1="40" y1="120" x2="548" y2="120" style="stroke:var(--rule-strong);stroke-width:1"/>
+        <path d="M40,120 C150,120 176,20 260,20 C360,20 400,120 548,120 Z" fill="url(#wfill)" style="stroke:var(--signal);stroke-width:2"/>
+        <line x1="260" y1="20" x2="260" y2="120" style="stroke:var(--signal-deep);stroke-width:1" stroke-dasharray="3 3"/>
+        <text x="40" y="140" style="font-family:var(--mono);fill:var(--muted)" font-size="11">step 1</text>
+        <text x="244" y="140" style="font-family:var(--mono);fill:var(--signal-deep)" font-size="11">~290</text>
+        <text x="498" y="140" style="font-family:var(--mono);fill:var(--muted)" font-size="11">step 1000</text>
+      </svg>
+      <p class="note">Half the total weight sits before step ~290. The first ten steps are worth almost nothing — which quietly killed the idea of predicting break-presence from history to beat 0.5 early.</p>
+    </div>
+
+    <p>And there's a second consequence that shaped the core of the solution. At scoring time you never see the other series — you walk one to its end before the next begins, and the platform assembles the cross-section afterward. Carrying state between series is technically allowed but breaks the determinism check. So each series has to be scored on an absolute, self-contained scale, and the only way a raw statistic from one series is comparable to another's is to express it relative to that series' own behaviour. Per-series calibration isn't a nice-to-have here. The interface forces it.</p>
+  </section>
+
+  <section class="col">
+    <p class="sec-eyebrow">01 — Calibration</p>
+    <h2 class="sec">Raw statistics are the wrong output</h2>
+    <p>Use a CUSUM straight and its size depends on the series' own noise and history length. A naturally volatile but unbroken series out-scores a quiet series that genuinely broke — and since the metric only cares about ranking across series, you'd be ranking by volatility, not by breaks.</p>
+    <p>So I convert every statistic into an empirical quantile under that series' <em>own</em> null. The historical segment is a free, break-free null sample. For a statistic on the first <em>t</em> online points, I compare it against the same statistic on every length-<em>t</em> window of the history, and emit where it falls. Using every contiguous window makes it deterministic and preserves the series' own dependence; matching the window length keeps the comparison fair as the online segment grows.</p>
+    <p>On the simplest statistic I had, raw scored 0.518 and calibrated moved it to 0.533. A small lift, but two things were instructive: two-sided calibration beat one-sided, which means a real fraction of breaks make series <em>quieter</em>; and the ceiling was clearly the statistic, not the calibration.</p>
+  </section>
+
+  <section class="col">
+    <p class="sec-eyebrow">02 — Residuals</p>
+    <h2 class="sec">One framework for four break types</h2>
+    <p>A single hand-picked statistic can't see all four break types, so I fit a model to the history and monitored its residuals. An AR captures the conditional mean, a GARCH the conditional variance, and the standardised residual <code>z = e / √h</code> should be white noise with unit variance while nothing has changed. I checked it held on unbroken series (mean ≈ 0, variance ≈ 1, autocorrelation ≈ 0) and that the recursion was leakage-free.</p>
+    <p>Then each break type shows up as a specific departure of <em>z</em> from white noise, and I built one calibrated statistic for each: level (running mean of z), variance (mean of z²), tail/shape (rate of |z|&gt;2), dependence (running lag-1 autocorrelation).</p>
+    <p>Variance was the workhorse — already past the single calibrated statistic. The surprise was the level term: weak, and actively <em>anti</em>-informative late in the series. My best guess is GARCH: a mean jump inflates the residual, the model reads it as a burst of volatility and divides it back out, so the level shift hides in the variance channel instead. And a naive equal-weight average of the four scored <em>below</em> the single best one — blending diluted the strong signal with the weak. That's the argument for learning the combination rather than averaging.</p>
+  </section>
+
+  <section class="col">
+    <p class="sec-eyebrow">03 — Stacking</p>
+    <h2 class="sec">The things that didn't work</h2>
+    <p>I stacked the calibrated statistics with a gradient-boosted model. Three things I'd flagged as plausible turned out wrong — and I only know because I tested them instead of assuming.</p>
+    <blockquote>A running max on the output, to keep confidence from falling, <em>hurt</em>. Under good calibration an unbroken series emits roughly uniform scores, and a running max ratchets those toward 1 as the series lengthens — poisoning the negative class at exactly the middle steps that carry the weight.</blockquote>
+    <p>Feeding the running max in as a <em>feature</em> instead was strictly better. Adding the historical length as a feature <em>overfit</em> — the model latched onto a length↔break correlation that didn't survive to new series, and dropping it raised the score. And throwing a dozen extra statistics at the model overfit below the lean set: the original four worked precisely because they were non-redundant, one per break type. More wasn't better; better-curated was.</p>
+  </section>
+
+  <hr class="div">
+
+  <section class="col">
+    <h2 class="sec">Where it landed</h2>
+    <div class="tablecard">
+      <table>
+        <caption>Held-out TS-AUC, by idea</caption>
+        <thead><tr><th>Step</th><th>Approach</th><th class="num">TS-AUC</th></tr></thead>
+        <tbody>
+          <tr><td class="step">base</td><td>Raw cumulative deviation</td><td class="num">0.518</td></tr>
+          <tr><td class="step">01</td><td>+ per-series null calibration</td><td class="num">0.533</td></tr>
+          <tr><td class="step">02</td><td>AR+GARCH residuals, best single statistic</td><td class="num">0.557</td></tr>
+          <tr class="win"><td class="step">02</td><td>+ LightGBM stack over calibrated statistics</td><td class="num">0.575</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Not a leaderboard-topping number, but every step is something I can explain and debug. The submission is deterministic — no RNG, no cross-series state — and the streaming path is bit-identical to the offline pipeline.</p>
+    <p>The push past this number is a story about what didn't work, and it rhymes with the last section. Adding more statistics overfit. Selecting the AR order per series hurt — tighter whitening erased break signal along with the dependence. Weighting the training toward the metric's middle steps hurt. A Kolmogorov distributional statistic hurt. Every lever that <em>added</em> something cost me. The one change that helped went the other way: halving the number of trees, which trimmed a little overfitting and nudged it from 0.569 to 0.575. On this problem, the gains came from taking complexity away, not piling it on.</p>
+  </section>
+
+  <section class="col">
+    <h2 class="sec">The one thing I'll keep</h2>
+    <p>On a rank-based, cross-sectional metric, the modelling barely matters until you've made your scores comparable across series. Getting the calibration right was worth more than any single detector — and it was the one part the interface wouldn't let me skip.</p>
+  </section>
+
+  <footer class="col">
+    <p>A working note from the ADIA Lab Structural Break Challenge, Real-Time Edition. Written for anyone deciding where to spend their effort on a streaming change-point problem: read the metric first.</p>
+  </footer>
+</div>

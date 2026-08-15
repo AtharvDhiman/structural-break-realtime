@@ -1,0 +1,21 @@
+# data & derived artifacts (never publish competition data)
+*.parquet
+*.pkl
+*.npz
+*.joblib
+data/
+cache/
+analysis/cache/
+scratchpad/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

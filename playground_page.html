@@ -1,0 +1,284 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Break Detector Playground</title>
+<style>
+  :root{
+    --bg:#F1F2F0; --surface:#FBFBFA; --surface-2:#EAEBE8; --console:#F7F8F6;
+    --ink:#15191C; --ink-soft:#3B424A; --muted:#68717B; --faint:#9AA3AB;
+    --rule:#DDDED9; --rule-strong:#C6C8C1; --grid:#E4E5E1;
+    --signal:#0E6E77; --signal-deep:#0A555C; --break:#C0602E; --break-soft:rgba(192,96,46,.12);
+    --sig-mean:#3E7CB1; --sig-var:#8A6DAE;
+    --serif:Charter,"Bitstream Charter","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0F1214; --surface:#171B1E; --surface-2:#1E2327; --console:#14181B;
+    --ink:#E9ECE9; --ink-soft:#C2C8C6; --muted:#8C9599; --faint:#5D666B;
+    --rule:#282D31; --rule-strong:#363C41; --grid:#232A2E;
+    --signal:#3AAAB3; --signal-deep:#57C4CD; --break:#DD8654; --break-soft:rgba(221,134,84,.15);
+    --sig-mean:#6BA3D6; --sig-var:#B79AD6;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0F1214; --surface:#171B1E; --surface-2:#1E2327; --console:#14181B;
+    --ink:#E9ECE9; --ink-soft:#C2C8C6; --muted:#8C9599; --faint:#5D666B;
+    --rule:#282D31; --rule-strong:#363C41; --grid:#232A2E;
+    --signal:#3AAAB3; --signal-deep:#57C4CD; --break:#DD8654; --break-soft:rgba(221,134,84,.15);
+    --sig-mean:#6BA3D6; --sig-var:#B79AD6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--serif); font-size:18px; line-height:1.6; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px; margin:0 auto; padding:52px 24px 90px}
+  a{color:var(--signal-deep)}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--signal-deep); margin:0 0 18px; display:flex; gap:12px; align-items:center}
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--rule-strong)}
+  h1{font-weight:600; letter-spacing:-.02em; font-size:clamp(34px,6vw,52px); line-height:1.04; margin:0 0 14px; text-wrap:balance}
+  .intro{color:var(--ink-soft); max-width:60ch; margin:0}
+  .intro b{color:var(--ink); font-weight:600}
+
+  .lab{margin-top:30px; background:var(--console); border:1px solid var(--rule); border-radius:16px; padding:22px}
+
+  /* controls */
+  .controls{display:grid; gap:18px; margin-bottom:20px}
+  .ctlrow{display:flex; flex-wrap:wrap; gap:12px 26px; align-items:center}
+  .group{display:flex; flex-direction:column; gap:8px}
+  .group>.lab-t{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+  .pills{display:flex; flex-wrap:wrap; gap:8px}
+  .pill{font-family:var(--mono); font-size:12.5px; cursor:pointer; background:var(--surface); color:var(--ink-soft); border:1px solid var(--rule); border-radius:999px; padding:8px 14px}
+  .pill[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+  .slider{display:flex; flex-direction:column; gap:6px; min-width:180px; flex:1}
+  .slider label{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between}
+  .slider label b{color:var(--ink-soft); font-weight:600}
+  input[type=range]{accent-color:var(--signal); width:100%}
+  .btns{display:flex; gap:10px; flex-wrap:wrap}
+  button.ctl{font-family:var(--mono); font-size:13px; cursor:pointer; border-radius:8px; padding:10px 16px}
+  button.ctl.primary{background:var(--signal); color:#fff; border:none}
+  button.ctl.ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--rule)}
+  button.ctl:focus-visible,.pill:focus-visible,input:focus-visible{outline:2px solid var(--signal); outline-offset:2px}
+  .hint{font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+  .hint b{color:var(--signal-deep)}
+
+  /* readout + meters */
+  .readout{display:flex; flex-wrap:wrap; gap:18px 28px; align-items:center; margin:6px 0 14px}
+  .score{display:flex; flex-direction:column}
+  .score .lab-t{font-family:var(--mono); font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); margin-bottom:5px}
+  .score .big{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:34px; line-height:1}
+  .meters{display:flex; flex-direction:column; gap:9px; min-width:230px; flex:1}
+  .meter{display:grid; grid-template-columns:96px 1fr 40px; align-items:center; gap:10px}
+  .meter .m-lab{font-family:var(--mono); font-size:11px; color:var(--ink-soft)}
+  .meter .track{height:9px; background:var(--surface-2); border-radius:5px; overflow:hidden}
+  .meter .fill{height:100%; width:0; border-radius:5px; transition:width .12s linear}
+  .meter.mean .fill{background:var(--sig-mean)}
+  .meter.var .fill{background:var(--sig-var)}
+  .meter .m-val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:12px; color:var(--muted); text-align:right}
+  .flag{margin-left:auto; font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; padding:6px 12px; border-radius:999px; border:1px solid transparent; white-space:nowrap; align-self:center}
+  .flag.calm{color:var(--signal-deep); border-color:var(--signal); background:rgba(14,110,119,.08)}
+  .flag.alert{color:var(--break); border-color:var(--break); background:var(--break-soft)}
+
+  canvas.chart{width:100%; display:block; cursor:crosshair}
+  #scoreChart{cursor:default}
+  .axis{font-family:var(--mono); font-size:11px; color:var(--muted); display:flex; justify-content:space-between; margin:2px 2px 12px}
+  .legend{display:flex; flex-wrap:wrap; gap:16px; margin:14px 2px 0; font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+  .legend span{display:flex; align-items:center; gap:7px}
+  .legend i{width:15px; height:3px; border-radius:2px; display:inline-block}
+
+  .note{color:var(--muted); font-size:14.5px; line-height:1.55; max-width:66ch; margin:28px 0 0}
+  .note b{color:var(--ink-soft); font-weight:600}
+  footer{margin-top:40px; padding-top:20px; border-top:1px solid var(--rule); font-size:14px; color:var(--muted)}
+  @media (max-width:560px){ .meter{grid-template-columns:80px 1fr 36px} .score .big{font-size:28px} }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Break detector · try it yourself</p>
+  <h1>Build a stream. Break it. Watch it get caught.</h1>
+  <p class="intro">Everything below runs live in your browser — the detector's math is real JavaScript, computing as you tinker. Set the noise, choose what kind of change to inject, and <b>click the top chart to drop the break wherever you like.</b></p>
+
+  <div class="lab">
+    <div class="controls">
+      <div class="ctlrow">
+        <div class="group">
+          <span class="lab-t">What changes at the break</span>
+          <div class="pills" id="typePills">
+            <button class="pill" data-t="none" aria-pressed="false">No break</button>
+            <button class="pill" data-t="mean" aria-pressed="true">Mean shift</button>
+            <button class="pill" data-t="var" aria-pressed="false">Variance change</button>
+            <button class="pill" data-t="both" aria-pressed="false">Both</button>
+          </div>
+        </div>
+        <div class="btns" style="margin-left:auto">
+          <button class="ctl primary" id="play">▶ Replay stream</button>
+          <button class="ctl ghost" id="regen">↻ New random draw</button>
+        </div>
+      </div>
+      <div class="ctlrow">
+        <div class="slider"><label>Background noise <b id="noiseVal">1.0</b></label>
+          <input type="range" id="noise" min="0.5" max="2" step="0.1" value="1"></div>
+        <div class="slider"><label>Break strength <b id="strVal">1.5</b></label>
+          <input type="range" id="strength" min="0.5" max="4" step="0.1" value="1.5"></div>
+        <span class="hint">tip: <b>click the values chart</b> to move the break</span>
+      </div>
+    </div>
+
+    <div class="readout">
+      <div class="score"><span class="lab-t">Break confidence</span><span class="big" id="scoreBig">0.00</span></div>
+      <div class="meters">
+        <div class="meter mean"><span class="m-lab">mean signal</span><span class="track"><span class="fill" id="mMean"></span></span><span class="m-val" id="vMean">0.00</span></div>
+        <div class="meter var"><span class="m-lab">variance signal</span><span class="track"><span class="fill" id="mVar"></span></span><span class="m-val" id="vVar">0.00</span></div>
+      </div>
+      <span class="flag calm" id="flag">calm</span>
+    </div>
+
+    <canvas class="chart" id="valChart" aria-label="The stream of values; click to place the break"></canvas>
+    <canvas class="chart" id="scoreChart" aria-label="The detector's confidence over time"></canvas>
+    <div class="axis"><span>← learned history (the &quot;normal&quot;)</span><span>live stream →</span></div>
+    <div class="legend">
+      <span><i style="background:var(--signal)"></i> break confidence</span>
+      <span><i style="background:var(--sig-mean)"></i> mean signal</span>
+      <span><i style="background:var(--sig-var)"></i> variance signal</span>
+      <span><i style="background:var(--break)"></i> the break you set</span>
+    </div>
+  </div>
+
+  <p class="note"><b>What's really happening:</b> when you change anything, the page generates a fresh stream and the detector scores every point in real time. It first measures how much this stream normally wiggles (from the grey history), then, for each new point, asks how far the running average and the running spread have drifted from that normal — in standard deviations — and squashes the answer to 0–1. A permanent break keeps pushing the drift up, so confidence climbs and stays; ordinary noise doesn't. This is a <b>simplified</b> cousin of the competition model — same two core ideas (judge each stream by its own history; let evidence accumulate) but without the AR+GARCH whitening or the trained combiner. Want the full machinery? Read the <a id="deeplink" href="#">technical write-up</a>.</p>
+
+  <footer>A hands-on companion to the ADIA Lab Structural Break Challenge. All computation is client-side JavaScript.</footer>
+</div>
+
+<script>
+const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.getElementById('deeplink').href = "https://claude.ai/code/artifact/5900d42f-ecae-4e31-848a-cdcbe87a83c5";
+
+const H = 260, Nn = 200;               // history length, online length
+const state = { seed: 12345, noise: 1, strength: 1.5, type: 'mean', pos: 0.42 };
+let hist = [], online = [], tau = -1, res = null;
+let cursor = 0, acc = 0, playing = false, lastTs = null, raf = null;
+
+/* ---- rng + gaussian ---- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function gauss(r){ let u=0,v=0; while(!u)u=r(); while(!v)v=r(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+
+/* ---- generate the stream (base noise fixed by seed; break applied on top) ---- */
+function generate(){
+  const r = mulberry32(state.seed);
+  hist = []; for(let i=0;i<H;i++) hist.push(state.noise*gauss(r));
+  const base = []; for(let i=0;i<Nn;i++) base.push(gauss(r));   // standard normals
+  const k = Math.round(state.pos*Nn);
+  tau = state.type==='none' ? -1 : k;
+  online = base.map((g,i)=>{
+    let sd = state.noise, mu = 0;
+    if(i>=k && state.type!=='none'){
+      if(state.type==='mean'||state.type==='both') mu = state.strength;
+      if(state.type==='var'||state.type==='both')  sd *= (1 + state.strength*0.7);
+    }
+    return mu + sd*g;
+  });
+}
+
+/* ---- the detector, live in JS ---- */
+const mean = a => a.reduce((s,x)=>s+x,0)/a.length;
+function squash(az){ return az*az/(az*az + 25); }   // Hill curve: ~0 when calm, climbs with evidence, asymptotes (never fully certain)
+function detect(){
+  const hm = mean(hist);
+  let hv = 0; for(const x of hist) hv += (x-hm)*(x-hm); hv = Math.max(hv/hist.length, 1e-6);
+  const hsd = Math.sqrt(hv);
+  const sMean=[], sVar=[], sAll=[];
+  let sum=0, ssq=0;
+  for(let t=1;t<=Nn;t++){
+    const x = online[t-1];
+    sum += (x-hm); ssq += (x-hm)*(x-hm);
+    const rm = sum/t;
+    const rv = Math.max(ssq/t - rm*rm, 1e-6);          // spread around the stream's OWN running mean
+    const zMean = Math.min(12, Math.abs(rm/(hsd/Math.sqrt(t))));   // level drift → mean signal only
+    const zVar  = t<4 ? 0 : Math.min(12, Math.abs(Math.log(rv/hv)/Math.sqrt(2/t)));  // spread change → variance signal only
+    const scM = t<3 ? 0 : squash(zMean);
+    const scV = squash(zVar);
+    sMean.push(scM); sVar.push(scV); sAll.push(1-(1-scM)*(1-scV));
+  }
+  res = { sMean, sVar, sAll };
+}
+
+/* ---- charts ---- */
+const valChart=document.getElementById('valChart'), scoreChart=document.getElementById('scoreChart');
+const vctx=valChart.getContext('2d'), sctx=scoreChart.getContext('2d');
+function sizeCanvas(cv,cssH){ const dpr=Math.min(devicePixelRatio||1,2); const w=cv.clientWidth||cv.parentElement.clientWidth||760;
+  cv.width=Math.round(w*dpr); cv.height=Math.round(cssH*dpr); cv.style.height=cssH+'px'; cv.getContext('2d').setTransform(dpr,0,0,dpr,0,0); return {w,h:cssH}; }
+const PADL=8, PADR=8;
+function xFor(i,W){ return PADL + (i/(H+Nn-1))*(W-PADL-PADR); }
+
+function draw(){
+  const dV=sizeCanvas(valChart,180), dS=sizeCanvas(scoreChart,132), W=dV.w;
+  const c = Math.max(0, Math.min(Nn, cursor));
+  // value scale
+  const allV = hist.concat(online); let lo=Math.min(...allV), hi=Math.max(...allV); const pd=(hi-lo)*0.08||1; lo-=pd; hi+=pd;
+  const Yv=v=>10+(1-(v-lo)/(hi-lo))*(dV.h-20);
+  vctx.clearRect(0,0,W,dV.h);
+  vctx.strokeStyle=css('--grid'); vctx.lineWidth=1; vctx.beginPath(); vctx.moveTo(PADL,Yv(0)); vctx.lineTo(W-PADR,Yv(0)); vctx.stroke();
+  vctx.strokeStyle=css('--faint'); vctx.lineWidth=1.2; vctx.globalAlpha=.55; vctx.beginPath();
+  for(let i=0;i<H;i++){ const x=xFor(i,W),y=Yv(hist[i]); i?vctx.lineTo(x,y):vctx.moveTo(x,y);} vctx.stroke(); vctx.globalAlpha=1;
+  vctx.strokeStyle=css('--rule-strong'); vctx.setLineDash([2,3]); vctx.beginPath(); vctx.moveTo(xFor(H,W),6); vctx.lineTo(xFor(H,W),dV.h-6); vctx.stroke(); vctx.setLineDash([]);
+  if(tau>=0){ vctx.strokeStyle=css('--break'); vctx.lineWidth=2; vctx.beginPath(); vctx.moveTo(xFor(H+tau,W),4); vctx.lineTo(xFor(H+tau,W),dV.h-4); vctx.stroke(); }
+  vctx.strokeStyle=css('--signal'); vctx.lineWidth=1.5; vctx.beginPath();
+  for(let i=0;i<c;i++){ const x=xFor(H+i,W),y=Yv(online[i]); i?vctx.lineTo(x,y):vctx.moveTo(x,y);} vctx.stroke();
+  if(c>0){ const x=xFor(H+c-1,W),y=Yv(online[c-1]); vctx.fillStyle=css('--signal'); vctx.beginPath(); vctx.arc(x,y,3,0,7); vctx.fill(); }
+
+  // score chart
+  const Ys=v=>8+(1-v)*(dS.h-16);
+  sctx.clearRect(0,0,W,dS.h); sctx.strokeStyle=css('--grid'); sctx.lineWidth=1;
+  [0,0.5,1].forEach(v=>{ sctx.beginPath(); sctx.moveTo(PADL,Ys(v)); sctx.lineTo(W-PADR,Ys(v)); sctx.stroke(); });
+  if(tau>=0){ sctx.strokeStyle=css('--break'); sctx.lineWidth=2; sctx.globalAlpha=.85; sctx.beginPath(); sctx.moveTo(xFor(H+tau,W),4); sctx.lineTo(xFor(H+tau,W),dS.h-4); sctx.stroke(); sctx.globalAlpha=1; }
+  const subLine=(arr,color)=>{ sctx.strokeStyle=color; sctx.lineWidth=1.2; sctx.globalAlpha=.7; sctx.beginPath();
+    for(let i=0;i<c;i++){ const x=xFor(H+i,W),y=Ys(arr[i]); i?sctx.lineTo(x,y):sctx.moveTo(x,y);} sctx.stroke(); sctx.globalAlpha=1; };
+  if(c>0){
+    // filled combined
+    sctx.beginPath(); sctx.moveTo(xFor(H,W),Ys(0));
+    for(let i=0;i<c;i++) sctx.lineTo(xFor(H+i,W),Ys(res.sAll[i]));
+    sctx.lineTo(xFor(H+c-1,W),Ys(0)); sctx.closePath(); sctx.fillStyle=css('--signal'); sctx.globalAlpha=.20; sctx.fill(); sctx.globalAlpha=1;
+    subLine(res.sMean, css('--sig-mean')); subLine(res.sVar, css('--sig-var'));
+    sctx.strokeStyle=css('--signal-deep'); sctx.lineWidth=2; sctx.beginPath();
+    for(let i=0;i<c;i++){ const x=xFor(H+i,W),y=Ys(res.sAll[i]); i?sctx.lineTo(x,y):sctx.moveTo(x,y);} sctx.stroke();
+    const x=xFor(H+c-1,W),y=Ys(res.sAll[c-1]); sctx.fillStyle=css('--signal-deep'); sctx.beginPath(); sctx.arc(x,y,3.2,0,7); sctx.fill();
+  }
+
+  // readouts
+  const i = Math.max(0, c-1);
+  const all = c>0?res.sAll[i]:0, m=c>0?res.sMean[i]:0, v=c>0?res.sVar[i]:0;
+  const big=document.getElementById('scoreBig'); big.textContent=all.toFixed(2); big.style.color=css(all>0.5?'--break':'--ink');
+  document.getElementById('mMean').style.width=(m*100)+'%'; document.getElementById('vMean').textContent=m.toFixed(2);
+  document.getElementById('mVar').style.width=(v*100)+'%';  document.getElementById('vVar').textContent=v.toFixed(2);
+  const flag=document.getElementById('flag');
+  if(all>0.5){ flag.className='flag alert'; flag.textContent='● something changed'; }
+  else { flag.className='flag calm'; flag.textContent = tau>=0 && c>tau ? 'weak signal…' : 'calm'; }
+}
+
+/* ---- recompute pipeline ---- */
+function refresh(playAnim){ generate(); detect(); if(playAnim && !reduced){ play(); } else { cursor=Nn; draw(); } }
+
+/* ---- animation ---- */
+function loop(ts){ if(!playing) return; if(lastTs==null) lastTs=ts; const dt=(ts-lastTs)/1000; lastTs=ts;
+  acc=Math.min(Nn, acc + 90*dt); cursor=Math.floor(acc); draw();
+  if(cursor>=Nn){ cursor=Nn; draw(); stop(); return; } raf=requestAnimationFrame(loop); }
+function play(){ if(cursor>=Nn) cursor=0; acc=cursor; playing=true; lastTs=null; document.getElementById('play').textContent='❚❚ Pause'; raf=requestAnimationFrame(loop); }
+function stop(){ playing=false; cancelAnimationFrame(raf); document.getElementById('play').textContent = cursor>=Nn?'▶ Replay stream':'▶ Play'; }
+
+/* ---- controls ---- */
+const pills=document.getElementById('typePills');
+pills.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{ state.type=b.dataset.t;
+  pills.querySelectorAll('.pill').forEach(p=>p.setAttribute('aria-pressed', p===b?'true':'false')); refresh(true); });
+document.getElementById('noise').oninput=e=>{ state.noise=+e.target.value; document.getElementById('noiseVal').textContent=state.noise.toFixed(1); refresh(false); };
+document.getElementById('strength').oninput=e=>{ state.strength=+e.target.value; document.getElementById('strVal').textContent=state.strength.toFixed(1); refresh(false); };
+document.getElementById('regen').onclick=()=>{ state.seed=(Math.random()*1e9)|0; refresh(true); };
+document.getElementById('play').onclick=()=> playing?stop():play();
+valChart.onclick=e=>{
+  const rect=valChart.getBoundingClientRect(); const W=rect.width;
+  const frac=((e.clientX-rect.left)-PADL)/(W-PADL-PADR);      // fraction across full timeline
+  const onlineFrac=(frac*(H+Nn-1) - H)/Nn;                    // convert to online fraction
+  state.pos=Math.max(0.03, Math.min(0.95, onlineFrac));
+  if(state.type==='none'){ state.type='mean'; pills.querySelectorAll('.pill').forEach(p=>p.setAttribute('aria-pressed', p.dataset.t==='mean'?'true':'false')); }
+  refresh(false);
+};
+addEventListener('resize', draw);
+if('ResizeObserver' in window) new ResizeObserver(()=>draw()).observe(valChart.parentElement);
+
+refresh(!reduced);
+</script>

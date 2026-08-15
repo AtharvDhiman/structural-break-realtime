@@ -1,0 +1,160 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catching Change</title>
+<style>
+  :root{
+    --bg:#F1F2F0; --surface:#FBFBFA; --surface-2:#EAEBE8;
+    --ink:#15191C; --ink-soft:#3B424A; --muted:#68717B; --faint:#9AA3AB;
+    --rule:#DDDED9; --rule-strong:#C6C8C1; --grid:#E4E5E1;
+    --signal:#0E6E77; --signal-deep:#0A555C; --break:#C0602E; --break-soft:rgba(192,96,46,.10);
+    --serif:Charter,"Bitstream Charter","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0F1214; --surface:#171B1E; --surface-2:#1E2327;
+    --ink:#E9ECE9; --ink-soft:#C2C8C6; --muted:#8C9599; --faint:#5D666B;
+    --rule:#282D31; --rule-strong:#363C41; --grid:#232A2E;
+    --signal:#3AAAB3; --signal-deep:#57C4CD; --break:#DD8654; --break-soft:rgba(221,134,84,.14);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0F1214; --surface:#171B1E; --surface-2:#1E2327;
+    --ink:#E9ECE9; --ink-soft:#C2C8C6; --muted:#8C9599; --faint:#5D666B;
+    --rule:#282D31; --rule-strong:#363C41; --grid:#232A2E;
+    --signal:#3AAAB3; --signal-deep:#57C4CD; --break:#DD8654; --break-soft:rgba(221,134,84,.14);
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--serif); line-height:1.6; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px; margin:0 auto; padding:0 24px}
+  a{color:inherit; text-decoration:none}
+
+  header.hero{padding:76px 0 20px; text-align:center}
+  .kicker{font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--signal-deep); margin:0 0 22px}
+  h1{font-weight:600; letter-spacing:-.025em; font-size:clamp(44px,8.5vw,76px); line-height:1; margin:0 0 20px; text-wrap:balance}
+  .tag{font-size:clamp(19px,2.6vw,23px); color:var(--ink-soft); max-width:34ch; margin:0 auto; line-height:1.5}
+  .herofig{margin:40px 0 0; border:1px solid var(--rule); border-radius:14px; background:var(--surface); overflow:hidden}
+  .herofig canvas{display:block; width:100%}
+  .herofig .cap{font-family:var(--mono); font-size:12px; color:var(--muted); text-align:left; padding:10px 16px; border-top:1px solid var(--rule); display:flex; justify-content:space-between}
+  .cap .b{color:var(--break)}
+
+  .cta{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin:34px 0 8px}
+  .btn{font-family:var(--mono); font-size:14px; letter-spacing:.02em; padding:14px 24px; border-radius:10px; border:1px solid var(--rule); transition:.15s}
+  .btn.primary{background:var(--signal); color:#fff; border-color:var(--signal)}
+  .btn.primary:hover{background:var(--signal-deep)}
+  .btn.ghost{background:transparent; color:var(--ink-soft)}
+  .btn.ghost:hover{border-color:var(--rule-strong)}
+  .btn:focus-visible{outline:2px solid var(--signal); outline-offset:2px}
+
+  /* result strip */
+  .result{margin:60px 0 0; display:flex; flex-wrap:wrap; align-items:center; gap:8px 28px; justify-content:center;
+    font-family:var(--mono); font-size:14px; color:var(--muted)}
+  .result .step{display:flex; align-items:baseline; gap:8px}
+  .result .v{font-variant-numeric:tabular-nums; color:var(--ink-soft)}
+  .result .peak .v{color:var(--signal-deep); font-weight:700; font-size:17px}
+  .result .arrow{color:var(--faint)}
+
+  h2.sec{text-align:center; font-family:var(--mono); font-size:12.5px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--muted); font-weight:500; margin:66px 0 24px}
+  .cards{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .card{display:flex; flex-direction:column; gap:10px; background:var(--surface); border:1px solid var(--rule);
+    border-radius:14px; padding:24px; transition:.16s; position:relative}
+  .card:hover{border-color:var(--signal); transform:translateY(-2px)}
+  .card:focus-visible{outline:2px solid var(--signal); outline-offset:2px}
+  .card .top{display:flex; align-items:center; gap:12px}
+  .card .ico{font-size:26px; line-height:1}
+  .card .badge{margin-left:auto; font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--signal-deep); border:1px solid var(--rule); border-radius:999px; padding:4px 10px}
+  .card h3{margin:0; font-size:22px; font-weight:600; letter-spacing:-.01em}
+  .card p{margin:0; color:var(--ink-soft); font-size:16px; line-height:1.5}
+  .card .go{font-family:var(--mono); font-size:13px; color:var(--signal-deep); margin-top:4px}
+  .card:hover .go{text-decoration:underline}
+
+  footer{margin:70px 0 90px; padding-top:22px; border-top:1px solid var(--rule-strong); text-align:center;
+    font-family:var(--mono); font-size:12.5px; color:var(--muted)}
+  @media (max-width:600px){ .cards{grid-template-columns:1fr} }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="kicker">ADIA Lab · Structural Break · Real-Time</p>
+    <h1>Catching change the moment it happens</h1>
+    <p class="tag">A real-time detector that watches a stream of numbers and flags when it has permanently changed — built, explained, and playable.</p>
+    <div class="herofig">
+      <canvas id="hero" aria-label="A calm signal that shifts to a new level partway through"></canvas>
+      <div class="cap"><span>a calm stream…</span><span class="b">…then it changes for good</span></div>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="playground_page.html">▶ Try the playground</a>
+      <a class="btn ghost" href="explainer_page.html">Read the 2-minute explainer</a>
+    </div>
+    <div class="result">
+      <span class="step"><span>baseline</span><span class="v">0.518</span></span>
+      <span class="arrow">→</span>
+      <span class="step"><span>calibration</span><span class="v">0.533</span></span>
+      <span class="arrow">→</span>
+      <span class="step"><span>residuals</span><span class="v">0.557</span></span>
+      <span class="arrow">→</span>
+      <span class="step peak"><span>final</span><span class="v">0.575</span></span>
+      <span style="color:var(--faint)">held-out TS-AUC</span>
+    </div>
+  </header>
+
+  <h2 class="sec">Four ways in</h2>
+  <div class="cards">
+    <a class="card" href="playground_page.html">
+      <div class="top"><span class="ico">🎛️</span><span class="badge">interactive</span></div>
+      <h3>The playground</h3>
+      <p>Build your own stream, drop a break wherever you click, and watch a live JavaScript detector score it in real time.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card" href="explainer_page.html">
+      <div class="top"><span class="ico">🔍</span><span class="badge">for anyone</span></div>
+      <h3>The explainer</h3>
+      <p>What a structural break is, why catching one early matters, and how the detector decides — in plain english, no jargon.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card" href="demo_page.html">
+      <div class="top"><span class="ico">🔴</span><span class="badge">real model</span></div>
+      <h3>The live demo</h3>
+      <p>Replay the actual competition model on real series and watch its confidence react to the true break.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card" href="writeup_page.html">
+      <div class="top"><span class="ico">📈</span><span class="badge">technical</span></div>
+      <h3>The write-up</h3>
+      <p>The metric that drove every choice, per-series calibration, residual monitoring — and the ideas that didn't work.</p>
+      <span class="go">Open →</span>
+    </a>
+  </div>
+
+  <footer>Built for the ADIA Lab Structural Break Challenge (Real-Time Edition).</footer>
+</div>
+
+<script>
+(function(){
+  const cv=document.getElementById('hero'); if(!cv) return;
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+  let s=987654321; const rnd=()=>{ s|=0; s=s+0x6D2B79F5|0; let t=Math.imul(s^s>>>15,1|s); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
+  const N=240, brk=150, data=[]; for(let i=0;i<N;i++){ data.push((i<brk?0:1.9)+(rnd()-0.5)*1.7); }
+  let head=0, last=null; const dpr=Math.min(devicePixelRatio||1,2);
+  function size(){ const w=cv.clientWidth||cv.parentElement.clientWidth||820; cv.width=w*dpr; cv.height=120*dpr; cv.style.height='120px'; cv.getContext('2d').setTransform(dpr,0,0,dpr,0,0); return w; }
+  function frame(ts){
+    const w=size(), h=120, ctx=cv.getContext('2d'), px=14;
+    if(last==null) last=ts; const dt=(ts-last)/1000; last=ts;
+    head = reduced ? N : (head + dt*60); if(head>N+45) head=0;
+    const shown=Math.min(N,Math.floor(head)), X=i=>px+i/(N-1)*(w-2*px);
+    let lo=Math.min(...data),hi=Math.max(...data); const pd=(hi-lo)*0.12; lo-=pd; hi+=pd;
+    const Y=v=>12+(1-(v-lo)/(hi-lo))*(h-24);
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle=css('--break'); ctx.globalAlpha=shown>brk?0.9:0.25; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(X(brk),6); ctx.lineTo(X(brk),h-6); ctx.stroke(); ctx.globalAlpha=1;
+    ctx.strokeStyle=css('--signal'); ctx.lineWidth=1.7; ctx.beginPath();
+    for(let i=0;i<shown;i++){ const x=X(i),y=Y(data[i]); i?ctx.lineTo(x,y):ctx.moveTo(x,y);} ctx.stroke();
+    if(shown>0){ const x=X(shown-1),y=Y(data[shown-1]); ctx.fillStyle=css('--signal-deep'); ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fill(); }
+    if(!reduced) requestAnimationFrame(frame);
+  }
+  if('ResizeObserver' in window) new ResizeObserver(()=>{ if(reduced) frame(0); }).observe(cv.parentElement);
+  requestAnimationFrame(frame);
+})();
+</script>

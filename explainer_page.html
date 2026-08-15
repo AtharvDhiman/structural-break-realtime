@@ -1,0 +1,299 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Moment Things Change</title>
+<style>
+  :root{
+    --bg:#F1F2F0; --surface:#FBFBFA; --surface-2:#EAEBE8; --console:#F7F8F6;
+    --ink:#15191C; --ink-soft:#3B424A; --muted:#68717B; --faint:#9AA3AB;
+    --rule:#DDDED9; --rule-strong:#C6C8C1; --grid:#E4E5E1;
+    --signal:#0E6E77; --signal-deep:#0A555C; --break:#C0602E; --break-soft:rgba(192,96,46,.12);
+    --serif:Charter,"Bitstream Charter","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0F1214; --surface:#171B1E; --surface-2:#1E2327; --console:#14181B;
+    --ink:#E9ECE9; --ink-soft:#C2C8C6; --muted:#8C9599; --faint:#5D666B;
+    --rule:#282D31; --rule-strong:#363C41; --grid:#232A2E;
+    --signal:#3AAAB3; --signal-deep:#57C4CD; --break:#DD8654; --break-soft:rgba(221,134,84,.15);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0F1214; --surface:#171B1E; --surface-2:#1E2327; --console:#14181B;
+    --ink:#E9ECE9; --ink-soft:#C2C8C6; --muted:#8C9599; --faint:#5D666B;
+    --rule:#282D31; --rule-strong:#363C41; --grid:#232A2E;
+    --signal:#3AAAB3; --signal-deep:#57C4CD; --break:#DD8654; --break-soft:rgba(221,134,84,.15);
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--serif);
+    font-size:19px; line-height:1.65; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:740px; margin:0 auto; padding:0 24px}
+  h1,h2,h3{text-wrap:balance}
+  a{color:var(--signal-deep)}
+
+  /* hero */
+  header.hero{padding:70px 0 26px; text-align:center}
+  .kicker{font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--signal-deep); margin:0 0 22px}
+  h1{font-weight:600; letter-spacing:-.02em; font-size:clamp(40px,8vw,68px); line-height:1.02; margin:0 0 22px}
+  .hero .sub{font-size:clamp(19px,2.6vw,23px); color:var(--ink-soft); max-width:32ch; margin:0 auto; line-height:1.5}
+  .herofig{margin:44px 0 0; border:1px solid var(--rule); border-radius:14px; background:var(--surface); overflow:hidden}
+  .herofig canvas{display:block; width:100%}
+  .herofig .cap{font-family:var(--mono); font-size:12px; color:var(--muted); text-align:left;
+    padding:10px 16px; border-top:1px solid var(--rule); display:flex; justify-content:space-between; gap:12px}
+
+  section{padding:20px 0}
+  .lead{font-size:22px; line-height:1.5; color:var(--ink); margin:40px 0 0; font-weight:500}
+  p{margin:20px 0; max-width:64ch}
+  h2{font-size:clamp(26px,4vw,34px); font-weight:600; letter-spacing:-.01em; margin:52px 0 0; line-height:1.15}
+  h2 .n{font-family:var(--mono); font-size:14px; color:var(--signal-deep); letter-spacing:.1em; display:block; margin-bottom:10px; font-weight:400}
+  em{font-style:italic}  strong{font-weight:600}
+
+  /* steps */
+  .steps{display:flex; flex-direction:column; gap:2px; margin:30px 0 0}
+  .step{display:grid; grid-template-columns:52px 1fr; gap:20px; padding:22px 0; border-top:1px solid var(--rule)}
+  .step:last-child{border-bottom:1px solid var(--rule)}
+  .step .num{font-family:var(--mono); font-size:28px; font-weight:700; color:var(--signal); line-height:1;
+    font-variant-numeric:tabular-nums}
+  .step h3{margin:0 0 6px; font-size:20px; font-weight:600}
+  .step p{margin:0; color:var(--ink-soft); font-size:18px; max-width:52ch}
+
+  /* demo console */
+  .demo{margin:34px 0 0; background:var(--console); border:1px solid var(--rule); border-radius:16px; padding:22px}
+  .picker{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px}
+  .pick{font-family:var(--mono); font-size:13px; cursor:pointer; background:var(--surface); color:var(--ink-soft);
+    border:1px solid var(--rule); border-radius:999px; padding:9px 15px; display:flex; align-items:center; gap:9px; transition:.15s}
+  .pick:hover{border-color:var(--rule-strong)}
+  .pick .dot{width:8px; height:8px; border-radius:2px; transform:rotate(45deg); background:var(--break)}
+  .pick.nb .dot{background:var(--signal); border-radius:50%; transform:none}
+  .pick[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+  .pick[aria-pressed="true"] .dot{background:var(--bg)}
+  .readout{display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 24px; margin-bottom:14px}
+  .readout .lab{font-family:var(--mono); font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:5px}
+  .readout .big{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:32px; line-height:1}
+  .readout .v{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:16px; color:var(--ink-soft)}
+  .readout .metric{display:flex; flex-direction:column}
+  .flag{margin-left:auto; align-self:center; font-family:var(--mono); font-size:11.5px; letter-spacing:.05em;
+    text-transform:uppercase; padding:6px 12px; border-radius:999px; border:1px solid transparent; white-space:nowrap}
+  .flag.pre{color:var(--muted); border-color:var(--rule)}
+  .flag.post{color:var(--break); border-color:var(--break); background:var(--break-soft)}
+  .flag.clear{color:var(--signal-deep); border-color:var(--signal); background:rgba(14,110,119,.08)}
+  .chart{width:100%; display:block}
+  .axis{font-family:var(--mono); font-size:11px; color:var(--muted); display:flex; justify-content:space-between; margin:2px 2px 14px}
+  .controls{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  button.ctl{font-family:var(--mono); font-size:13px; cursor:pointer; background:var(--signal); color:#fff; border:none; border-radius:8px; padding:10px 18px}
+  button.ctl.ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--rule)}
+  button.ctl:focus-visible,.pick:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--signal); outline-offset:2px}
+  .scrub{flex:1; min-width:150px; accent-color:var(--signal)}
+  .speed{font-family:var(--mono); font-size:12px; color:var(--muted); display:flex; gap:7px; align-items:center}
+  .legend{display:flex; flex-wrap:wrap; gap:16px; margin:18px 2px 0; font-family:var(--mono); font-size:12px; color:var(--muted)}
+  .legend span{display:flex; align-items:center; gap:7px}
+  .legend i{width:15px; height:3px; border-radius:2px; display:inline-block}
+  .helper{color:var(--muted); font-size:15px; font-style:italic; margin:16px 0 0}
+
+  .callout{margin:36px 0 0; padding:26px 28px; background:var(--surface); border:1px solid var(--rule);
+    border-left:3px solid var(--break); border-radius:12px}
+  .callout p{margin:0; max-width:60ch}
+  .callout p+p{margin-top:14px}
+  footer{margin:64px 0 90px; padding-top:24px; border-top:1px solid var(--rule-strong)}
+  footer p{font-size:15px; color:var(--muted)}
+  @media (max-width:520px){ .step{grid-template-columns:40px 1fr; gap:14px} .readout .big{font-size:26px} }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="kicker">Detecting change · in plain english</p>
+    <h1>The moment things change</h1>
+    <p class="sub">Most data just wiggles. Every so often something shifts — for good. Here's a tool that tries to catch that shift as it happens.</p>
+    <div class="herofig">
+      <canvas id="heroCanvas" aria-label="An animated stream of numbers that wiggles calmly, then shifts to a new level"></canvas>
+      <div class="cap"><span>a calm stream…</span><span style="color:var(--break)">…then it changes for good</span></div>
+    </div>
+  </header>
+
+  <section>
+    <p class="lead">Everything looks like noise — until it doesn't.</p>
+    <p>Picture a sensor on a factory machine, the beat of someone's heart, or the water level of a river. Read any of them often enough and you get a jittery stream of numbers. Nearly all of that jitter means nothing.</p>
+    <p>But now and then, something real happens. The machine starts to wear out. The patient's condition shifts. The river changes course. The numbers stop wiggling around their old normal and settle into a <em>new</em> one. Statisticians call that a <strong>structural break</strong> — a permanent change in how the data behaves.</p>
+    <p>The hard part isn't spotting it a year later, when it's obvious. It's spotting it <em>now</em>, while the readings are still coming in one at a time — and not crying wolf every time the noise gets a little loud.</p>
+  </section>
+
+  <section>
+    <h2><span class="n">SEE IT DECIDE</span>Watch it make the call</h2>
+    <p>Below are three real streams. Two of them contain a genuine, permanent change; the third is just noise from start to finish. Press play and watch the tool's confidence — the filling line at the bottom — react as the numbers arrive. The <span style="color:var(--break)">orange marker</span> shows where the real change actually happened. The tool never gets to see that marker; it has to figure it out.</p>
+
+    <div class="demo">
+      <div class="picker" id="picker" role="tablist" aria-label="Choose a stream"></div>
+      <div class="readout">
+        <div class="metric"><span class="lab">Confidence a change has happened</span><span class="big" id="scoreBig">0.00</span></div>
+        <div class="metric"><span class="lab">Reading #</span><span class="v" id="stepReadout">0 / 0</span></div>
+        <div class="metric"><span class="lab">Latest value</span><span class="v" id="valReadout">—</span></div>
+        <span class="flag pre" id="flag">streaming…</span>
+      </div>
+      <canvas class="chart" id="valChart" aria-label="The stream of values over time, with the true change marked in orange"></canvas>
+      <canvas class="chart" id="scoreChart" aria-label="The tool's confidence that a change has already happened"></canvas>
+      <div class="axis"><span>← the calm past (given up front)</span><span>new readings arrive →</span></div>
+      <div class="controls">
+        <button class="ctl" id="play">▶ Play</button>
+        <button class="ctl ghost" id="restart">↺ Start over</button>
+        <input class="scrub" id="scrub" type="range" min="0" max="1" value="0" step="1" aria-label="Move through the stream">
+        <label class="speed">speed
+          <select id="speed" aria-label="Playback speed">
+            <option value="25">slow</option>
+            <option value="55" selected>normal</option>
+            <option value="120">fast</option>
+            <option value="9999">jump to end</option>
+          </select>
+        </label>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--signal)"></i> the readings, and the confidence</span>
+        <span><i style="background:var(--break)"></i> where the real change happened</span>
+        <span><i style="background:var(--faint)"></i> the calm history</span>
+      </div>
+      <p class="helper">Watch how the confidence climbs after the orange line on the two changed streams — and how it never really gets going on the calm one.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">HOW IT WORKS</span>Three simple ideas</h2>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><div>
+        <h3>Learn what calm looks like</h3>
+        <p>First it studies a long stretch of the stream from before anything changed — long enough to learn that particular stream's idea of normal, and especially how much it usually jumps around.</p>
+      </div></div>
+      <div class="step"><div class="num">2</div><div>
+        <h3>Judge every stream by its own past</h3>
+        <p>As each new number arrives, it asks: is this still normal <em>for this stream?</em> A reading that's shocking for a calm stream might be routine for a wild one. So it always grades on a curve set by that stream's own history — never a one-size-fits-all threshold.</p>
+      </div></div>
+      <div class="step"><div class="num">3</div><div>
+        <h3>Let the evidence add up</h3>
+        <p>One odd reading proves nothing — noise does that all the time. But when the surprises keep stacking up in the same direction, confidence grows and stays. A real break is permanent, so the evidence for it shouldn't fade.</p>
+      </div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">THE HONEST TRUTH</span>Does it actually work?</h2>
+    <div class="callout">
+      <p>Yes — but it's a nudge, not a crystal ball, and it's worth being honest about that. Across thousands of test streams, it ranks the ones that truly changed above the ones that didn't noticeably more often than a coin flip would. That sounds modest, and it is: catching a permanent change <em>early</em>, without false alarms, from a single noisy stream, is genuinely one of the harder things to do in statistics.</p>
+      <p>The real win here isn't a flashy number. It's a method you can actually follow, step by step, and check for yourself — which, for a tool making calls on live data, matters more than a little extra accuracy nobody can explain.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Built for the ADIA Lab Structural Break Challenge (Real-Time Edition). Curious about the machinery — the residual models, the calibration, the dead ends? There's a <a id="deeplink" href="#">technical write-up</a> with all of it.</p>
+  </footer>
+</div>
+
+<script>
+const DEMO = {"series":[{"id":6781,"kind":"break","flavour":"a level shift","tau":82,"hist_tail":[1.247,0.106,-0.844,0.714,0.598,1.091,-2.644,0.773,-1.175,-0.125,0.764,1.154,-1.68,1.085,0.901,-0.494,1.049,-2.16,-1.09,0.437,-0.128,-1.326,-0.098,0.03,2.021,1.823,-0.525,-0.305,0.495,1.316,0.585,-0.151,0.237,-0.997,-0.318,1.528,-0.969,-0.061,-1.996,-1.389],"values":[1.607,1.404,-0.523,-0.753,-0.055,1.578,0.341,0.04,-0.913,1.251,1.426,1.62,-1.111,0.36,-0.687,-0.873,1.038,-0.825,2.058,-0.862,-0.773,0.034,-0.031,-1.855,-1.03,-1.209,2.6,-0.355,-1.303,0.136,0.614,1.146,-0.542,-0.845,-1.291,-0.018,-0.24,-1.846,1.361,-1.093,0.198,-0.737,-0.5,-0.869,-0.965,0.568,-0.283,-0.629,-0.552,-1.236,-1.021,1.058,2.501,2.062,-0.23,-1.002,-0.505,1.755,2.847,-1.37,2.892,-0.678,-0.276,-2.043,0.868,1.266,-0.443,-0.226,2.069,2.434,1.029,0.106,-1.69,1.453,-0.104,-0.399,-1.744,0.064,1.838,1.573,-0.195,-0.013,-2.363,0.014,-1.024,1.58,1.82,-0.704,1.112,1.02,-2.0,-0.329,1.578,-0.089,-1.253,1.508,1.064,0.712,-0.462,0.882,-1.148,-0.293,-0.577,2.232,-0.317,0.846,0.191,2.566,-0.57,0.071,0.542,0.221,0.671,1.259,-0.901,0.653,-2.79,1.282,-1.03,-2.713,-0.577,1.154,1.696,-1.303,1.07,0.562,-0.351,1.5,0.613,-0.116,-1.651,-0.237,0.97,-3.049,2.05,2.06,-0.806,0.468,-1.261,-0.15,0.582,-0.618,0.815,0.094,-0.351,0.545,-1.2,-0.047,-4.011,-0.422,-0.478,2.867,1.252,0.021,-1.796,1.6,-1.226,1.806,1.927,1.203,2.88,-1.583,1.563,-0.273,-0.063,2.384,2.748,-2.504,0.656,-2.575,3.54,-0.56,-3.077,0.318,4.011,-0.38,-2.305,1.7,1.181,-1.021,-2.662,0.862,-3.885,-1.157,0.854,1.481,1.082,-0.969,4.038,2.847,-3.472,-1.077,1.714,1.23,0.706,-0.001,-1.58,0.927,0.166,-3.778,2.722,-0.419,-0.642,0.54,-0.335,-2.077,-0.278,-2.499,-0.896,1.203,0.9,-0.435,-0.732,-1.326,-0.358,1.909,-0.68,-2.459,2.838,-2.205,-0.286,-1.497,0.787,-0.498,-0.235,1.073,-0.253,2.323,2.792,-2.104,3.565,-4.735,1.727,-0.955,-3.01,-0.37,0.049],"scores":[0.0153,0.0163,0.0155,0.0155,0.0175,0.0176,0.0231,0.0231,0.0251,0.0258,0.0284,0.0284,0.03,0.03,0.035,0.035,0.035,0.0402,0.0402,0.044,0.044,0.044,0.0481,0.0463,0.0488,0.0488,0.0514,0.054,0.0537,0.0537,0.0544,0.0553,0.0568,0.0568,0.0581,0.0581,0.0581,0.0595,0.0595,0.0615,0.0615,0.0643,0.0652,0.0652,0.0686,0.0686,0.0706,0.0706,0.0738,0.0769,0.0769,0.08,0.0764,0.0805,0.0823,0.0783,0.0781,0.0852,0.0887,0.0852,0.0884,0.0884,0.0875,0.0908,0.0908,0.0908,0.0927,0.0927,0.0954,0.1107,0.114,0.1131,0.114,0.1173,0.1149,0.1098,0.1105,0.1088,0.1184,0.1204,0.1163,0.1163,0.1225,0.1194,0.1182,0.1194,0.1308,0.1262,0.1262,0.1302,0.1323,0.1302,0.1346,0.1346,0.1346,0.136,0.136,0.136,0.1313,0.1305,0.1305,0.1318,0.1305,0.138,0.1346,0.1346,0.1333,0.1495,0.1444,0.1388,0.1406,0.1393,0.1393,0.1438,0.1438,0.1438,0.1551,0.1551,0.1551,0.1573,0.1573,0.1573,0.1639,0.1639,0.1639,0.1617,0.1617,0.1617,0.1638,0.1638,0.1638,0.1664,0.1642,0.2002,0.2048,0.2156,0.2156,0.2132,0.2132,0.2132,0.2173,0.2154,0.2154,0.201,0.1935,0.1935,0.1947,0.1947,0.2564,0.2614,0.2551,0.2614,0.2659,0.2659,0.2659,0.2694,0.2694,0.2694,0.2709,0.2709,0.2709,0.2718,0.2718,0.2718,0.274,0.274,0.2793,0.2983,0.2885,0.3308,0.3434,0.3434,0.3352,0.337,0.3465,0.3465,0.3393,0.3452,0.3452,0.3516,0.3456,0.3456,0.3447,0.3447,0.3447,0.3522,0.3522,0.3522,0.3566,0.3566,0.3506,0.3568,0.3628,0.3628,0.3645,0.3645,0.3645,0.3664,0.3664,0.3603,0.3727,0.3666,0.3666,0.3693,0.3693,0.3693,0.3799,0.3799,0.3779,0.3829,0.3829,0.3829,0.387,0.387,0.387,0.3914,0.3914,0.3914,0.4009,0.4009,0.4009,0.4009,0.4009,0.4009,0.4025,0.4025,0.4025,0.4049,0.4063,0.4067,0.4154,0.4173,0.4177,0.4207,0.4207,0.4207,0.4257]},{"id":3430,"kind":"break","flavour":"the noise calms down","tau":70,"hist_tail":[-0.877,-1.398,-2.731,-0.023,0.216,1.012,0.256,4.143,-0.326,2.726,1.669,2.083,3.483,-2.875,1.599,-1.604,-0.724,-0.064,-0.475,3.506,-2.921,1.837,1.466,2.921,-0.189,-2.542,-4.03,4.704,-0.604,-0.436,-0.088,1.515,-0.262,1.735,-0.68,-1.808,-3.647,-1.753,0.646,-2.819],"values":[2.62,-0.969,2.509,0.949,1.642,0.562,-1.279,3.087,0.24,0.532,-2.432,1.019,1.243,-1.112,-5.073,-1.814,5.364,-0.141,0.19,0.635,0.281,-1.692,-0.967,4.23,1.836,4.157,-3.603,-1.753,-0.667,-1.502,-0.488,0.814,-1.612,-1.246,-1.662,-2.494,3.881,-2.21,-1.313,-0.087,0.237,-1.58,0.6,-0.354,0.211,2.085,-0.224,-0.317,-2.205,3.352,-0.476,0.494,4.237,-3.302,-1.349,4.117,3.598,0.818,-1.33,2.502,1.943,2.214,-1.132,0.59,-2.318,-0.338,1.183,2.25,0.627,-0.403,0.975,0.974,0.128,0.431,0.144,-0.324,-0.397,-0.091,-0.239,0.044,-0.12,-0.711,0.443,-0.36,-1.463,-0.411,0.06,0.369,-0.169,0.141,-0.061,0.194,0.4,-0.021,0.245,0.717,0.825,0.084,0.15,-0.594,0.598,-0.144,0.653,0.146,-0.492,-0.047,-0.15,0.067,0.155,-0.042,0.076,0.072,-1.041,-0.06,0.135,0.405,0.383,-0.536,0.145,-0.094,0.031,0.062,0.314,-0.213,-0.025,-0.3,-0.906,-0.72,0.369,-0.055,0.24,0.876,0.214,-0.053,0.43,-0.137,0.475,0.348,-0.097,0.089,0.472,-0.069,0.256,0.107,0.493,0.524,0.243,0.269,-0.257,0.738,-0.401,0.721,0.26,-0.595,0.963,-0.093,0.183,1.108,-0.064,-0.149,-0.019,-0.552,-0.743,-0.877,-0.177,0.368,0.197,-0.017,0.022,0.499,0.505,0.266,-1.112,-0.694,-0.344,0.11,0.108,-0.337,-0.246,-0.402,0.075,0.293,0.621,0.502,0.586,-0.908,0.217,0.427,0.11,-1.236,1.267,-0.373,-0.166,0.133,-0.104,0.693,1.325,-0.226,-0.519,-0.065,-0.265,0.228,-1.117,0.009,-0.557,-0.128,0.104,-0.473,-0.637,0.102,-0.484,1.142,-0.843,-0.588,0.145,0.327,0.671,-0.122,0.747,0.391,-0.127,0.114,0.034,0.104,-0.261,0.249,-0.196],"scores":[0.0157,0.0151,0.0157,0.0156,0.0177,0.0177,0.0222,0.0228,0.0255,0.0255,0.0281,0.0281,0.0296,0.0296,0.0331,0.0335,0.0349,0.0394,0.037,0.0406,0.0406,0.0406,0.044,0.0439,0.0475,0.0524,0.0524,0.0524,0.049,0.049,0.0519,0.0519,0.0543,0.0543,0.0555,0.0561,0.0555,0.0577,0.0584,0.0603,0.0603,0.063,0.063,0.063,0.0663,0.0655,0.0674,0.0674,0.0709,0.0701,0.0701,0.073,0.073,0.073,0.0746,0.0746,0.0749,0.0767,0.0767,0.0767,0.0789,0.0804,0.0804,0.0826,0.0811,0.0813,0.0833,0.0849,0.0871,0.0871,0.0871,0.0883,0.093,0.093,0.094,0.0892,0.0892,0.0914,0.0914,0.0914,0.0936,0.0919,0.0919,0.0928,0.0931,0.0931,0.0951,0.0951,0.0951,0.097,0.097,0.1048,0.108,0.108,0.108,0.1091,0.1112,0.1112,0.1129,0.1129,0.1129,0.1151,0.1147,0.1151,0.1169,0.1219,0.1234,0.1265,0.1248,0.1183,0.1175,0.1186,0.1153,0.1192,0.1192,0.1214,0.1252,0.1252,0.1336,0.1398,0.1314,0.1446,0.1459,0.1459,0.1465,0.1628,0.1557,0.1475,0.154,0.154,0.154,0.1565,0.1603,0.1603,0.1676,0.1657,0.1657,0.1896,0.1889,0.1973,0.2011,0.2111,0.2278,0.2286,0.2286,0.2286,0.2455,0.2455,0.2512,0.2907,0.2907,0.2907,0.294,0.294,0.2424,0.2595,0.2595,0.2109,0.2266,0.2471,0.261,0.2619,0.2348,0.1989,0.2139,0.2139,0.2329,0.249,0.249,0.249,0.2694,0.2694,0.2264,0.2281,0.2253,0.2367,0.2511,0.2511,0.2511,0.2545,0.2545,0.2545,0.2556,0.2556,0.2556,0.2594,0.2594,0.2594,0.2601,0.2499,0.2232,0.2368,0.2486,0.2636,0.2539,0.2641,0.2269,0.2365,0.2483,0.2643,0.265,0.265,0.2391,0.2571,0.2571,0.2571,0.2667,0.2667,0.2667,0.2704,0.2704,0.2572,0.2461,0.2409,0.2675,0.2734,0.2791,0.2734,0.2839,0.2839,0.2868,0.2868,0.2868,0.2868,0.3378,0.3378,0.3378]},{"id":8026,"kind":"nobreak","flavour":"just noise, all the way","tau":-1,"hist_tail":[-0.636,-0.22,0.057,0.506,0.667,-0.166,-0.697,0.426,-0.103,-0.107,0.137,-0.171,-0.214,-0.956,-0.233,-0.699,0.616,0.317,-0.919,0.125,-0.307,0.072,-0.419,-0.418,-0.188,-0.115,-0.25,-0.282,0.219,-0.131,-0.154,0.221,-0.581,0.074,0.749,-0.141,0.178,0.307,-0.22,-0.309],"values":[0.075,-0.048,-0.214,-0.067,0.022,0.46,0.208,0.451,-0.02,-0.061,-0.179,0.284,0.359,-0.291,1.074,0.344,0.064,0.021,-0.463,0.103,-0.661,-1.041,-0.0,0.571,0.183,-1.035,0.846,-0.933,-0.788,0.213,0.796,0.49,0.316,0.406,-0.203,0.35,0.065,0.262,-0.68,0.021,0.305,0.52,0.369,-0.498,0.351,-0.272,0.323,0.515,-0.785,0.071,0.866,-0.363,0.242,0.3,0.818,0.377,-0.586,-0.327,-0.031,-0.162,-0.335,-0.148,-0.163,0.103,0.177,0.773,-0.512,-0.034,-1.072,-0.017,-0.305,-0.618,0.315,0.297,0.366,0.864,-0.266,-1.561,-0.698,0.014,0.012,-0.057,-0.068,0.124,0.341,0.915,0.09,-0.43,0.709,-0.07,0.048,0.404,-0.053,-0.251,0.132,-0.654,-0.366,0.353,0.148,-0.068,-0.304,0.296,0.334,0.149,-0.303,0.546,0.299,-0.174,-0.286,0.432,-0.687,-0.669,0.559,0.939,0.249,1.034,-0.541,-0.084,-0.058,0.088,-0.05,-0.251,-0.818,0.093,-0.689,-0.728,1.178,0.31,0.277,0.277,-0.045,-0.411,-0.215,-0.109,1.187,0.553,0.392,-0.103,-0.028,0.177,0.132,-0.006,0.395,0.431,-0.004,0.158,-0.356,0.402,0.116,0.398,-0.162,0.116,0.03,0.472,0.248,0.121,0.646,-0.005,-0.053,0.486,-0.395,0.239,0.243,-0.245,-0.018,0.298,-0.098,-0.61,0.173,-0.191,-0.035,0.023,0.169,0.325,0.01,-0.048,0.251,-0.13,0.015,0.187,-0.125,-0.331,0.06,-0.194,0.261,0.183,-0.711,-0.192,-0.029,0.021,-0.679,0.107,0.085,0.234,0.092,-0.213,-0.094,-0.158,-0.124,-0.108,-0.244,0.102,-0.209,-0.058,-0.008,0.062,0.227,0.086,0.094,-0.041,-0.223,0.129,0.109,-0.125,-0.218,-0.185,-0.282,0.095,0.0,-0.159,-0.012,-0.208,0.131,0.412,0.1,-0.492,0.099,0.117,0.14,0.445,0.423,0.172,0.12,0.175,0.018,-0.01,0.056,0.046,0.176,-0.196,-0.224,0.056,0.189,0.053,0.08,-0.019,0.069,0.032,-0.399],"scores":[0.0109,0.0109,0.0109,0.0109,0.0125,0.0124,0.0154,0.0154,0.0171,0.0171,0.0187,0.0187,0.0198,0.0198,0.0226,0.0226,0.0226,0.0259,0.0259,0.0278,0.0278,0.0278,0.0303,0.0303,0.0322,0.0322,0.0322,0.0339,0.0339,0.0339,0.0356,0.0356,0.0361,0.0361,0.037,0.037,0.037,0.0385,0.0385,0.0398,0.0398,0.0408,0.0408,0.0408,0.0415,0.0415,0.0419,0.0419,0.0437,0.0437,0.0437,0.0442,0.0442,0.0442,0.0453,0.0453,0.0453,0.0457,0.0457,0.0469,0.0472,0.0472,0.0472,0.0485,0.0485,0.0485,0.05,0.05,0.0513,0.0513,0.0513,0.0508,0.0508,0.0508,0.0514,0.0514,0.0514,0.0528,0.0528,0.0528,0.0533,0.0533,0.0533,0.0539,0.0539,0.0539,0.0551,0.0551,0.0551,0.0566,0.0566,0.0566,0.0584,0.0584,0.0584,0.0591,0.0591,0.0591,0.0597,0.0597,0.0597,0.0602,0.0604,0.0604,0.0613,0.0613,0.0613,0.0627,0.0627,0.0627,0.0622,0.0622,0.0622,0.0636,0.0638,0.0636,0.0632,0.0634,0.0634,0.0642,0.0642,0.0642,0.0652,0.0652,0.0652,0.0665,0.0665,0.0665,0.0679,0.0679,0.0679,0.0691,0.0691,0.0691,0.0708,0.0708,0.0708,0.0724,0.0724,0.0724,0.0746,0.0746,0.0746,0.1021,0.1021,0.0999,0.1006,0.1006,0.1006,0.1021,0.1021,0.1021,0.1037,0.1037,0.1037,0.1049,0.1049,0.1049,0.1055,0.1055,0.1055,0.1068,0.1068,0.1068,0.1076,0.108,0.108,0.1093,0.1093,0.1093,0.1102,0.1102,0.1102,0.1089,0.1089,0.1089,0.1101,0.1101,0.1101,0.114,0.114,0.114,0.1129,0.1129,0.1129,0.1173,0.1173,0.1173,0.1176,0.1176,0.1176,0.1188,0.1188,0.1188,0.1199,0.1199,0.1199,0.1205,0.1205,0.1205,0.1213,0.1213,0.1213,0.1224,0.1224,0.1224,0.1239,0.1239,0.1239,0.1233,0.1233,0.2161,0.2176,0.2176,0.1704,0.1707,0.117,0.117,0.117,0.117,0.117,0.1153,0.1153,0.1153,0.1175,0.1175,0.1175,0.1191,0.1191,0.1191,0.1202,0.1206,0.1206,0.1228,0.1228,0.1228,0.1228,0.1228,0.1228,0.1228,0.1228,0.1228,0.1228,0.1228,0.1228,0.1252]}]};
+const WRITEUP_URL = "https://claude.ai/code/artifact/5900d42f-ecae-4e31-848a-cdcbe87a83c5";
+
+const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.getElementById('deeplink').href = WRITEUP_URL;
+
+/* ---------------- hero animation (illustrative synthetic stream) ---------------- */
+(function(){
+  const cv = document.getElementById('heroCanvas');
+  let mul = 1234567;
+  const rnd = ()=>{ mul |= 0; mul = mul + 0x6D2B79F5 | 0; let t = Math.imul(mul ^ mul>>>15, 1 | mul); t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t; return ((t ^ t>>>14)>>>0)/4294967296; };
+  const N = 220, brk = 132;
+  const data = [];
+  for(let i=0;i<N;i++){ const base = i<brk ? 0 : 1.9; data.push(base + (rnd()-0.5)*1.7); }
+  let head = 0, last = null, dpr = Math.min(devicePixelRatio||1,2);
+  function size(){ const w = cv.clientWidth||cv.parentElement.clientWidth||720; cv.width=w*dpr; cv.height=112*dpr; cv.style.height='112px'; cv.getContext('2d').setTransform(dpr,0,0,dpr,0,0); return w; }
+  function frame(ts){
+    const w = size(), h=112, ctx=cv.getContext('2d'), padX=14;
+    if(last==null) last=ts; const dt=(ts-last)/1000; last=ts;
+    if(!reduced){ head += dt*55; if(head>N+40) head=0; }
+    else head = N;
+    const shown = Math.min(N, Math.floor(head));
+    const X = i=> padX + i/(N-1)*(w-2*padX);
+    let lo=Math.min(...data), hi=Math.max(...data); const pad=(hi-lo)*0.12; lo-=pad; hi+=pad;
+    const Y = v=> 12 + (1-(v-lo)/(hi-lo))*(h-24);
+    ctx.clearRect(0,0,w,h);
+    // break marker
+    ctx.strokeStyle=css('--break'); ctx.globalAlpha = shown>brk?0.9:0.25; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(X(brk),6); ctx.lineTo(X(brk),h-6); ctx.stroke(); ctx.globalAlpha=1;
+    // line
+    ctx.strokeStyle=css('--signal'); ctx.lineWidth=1.7; ctx.beginPath();
+    for(let i=0;i<shown;i++){ const x=X(i),y=Y(data[i]); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.stroke();
+    if(shown>0){ const x=X(shown-1),y=Y(data[shown-1]); ctx.fillStyle=css('--signal-deep'); ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fill(); }
+    if(!reduced) requestAnimationFrame(frame);
+  }
+  if('ResizeObserver' in window) new ResizeObserver(()=>{ if(reduced) frame(0); }).observe(cv.parentElement);
+  requestAnimationFrame(frame);
+})();
+
+/* ---------------- interactive demo (real model outputs) ---------------- */
+const valChart=document.getElementById('valChart'), scoreChart=document.getElementById('scoreChart');
+const vctx=valChart.getContext('2d'), sctx=scoreChart.getContext('2d');
+let idx=0, cursor=0, acc=0, playing=false, lastTs=null, raf=null;
+const S=()=>DEMO.series[idx], H=()=>S().hist_tail.length, N=()=>S().values.length, total=()=>H()+N();
+
+function sizeCanvas(cv,cssH){ const dpr=Math.min(devicePixelRatio||1,2); const w=cv.clientWidth||cv.parentElement.clientWidth||720;
+  cv.width=Math.round(w*dpr); cv.height=Math.round(cssH*dpr); cv.style.height=cssH+'px'; cv.getContext('2d').setTransform(dpr,0,0,dpr,0,0); return {w,h:cssH}; }
+
+function draw(){
+  const s=S(), padL=8, padR=8;
+  const dV=sizeCanvas(valChart,180), dS=sizeCanvas(scoreChart,120);
+  const W=dV.w, tot=total(), h0=H(), X=i=>padL+(i/(tot-1))*(W-padL-padR);
+  const allV=s.hist_tail.concat(s.values); let lo=Math.min(...allV),hi=Math.max(...allV); const pd=(hi-lo)*0.08||1; lo-=pd; hi+=pd;
+  const Yv=v=>10+(1-(v-lo)/(hi-lo))*(dV.h-20);
+  vctx.clearRect(0,0,W,dV.h);
+  vctx.strokeStyle=css('--grid'); vctx.lineWidth=1; vctx.beginPath(); vctx.moveTo(padL,Yv(0)); vctx.lineTo(W-padR,Yv(0)); vctx.stroke();
+  vctx.strokeStyle=css('--faint'); vctx.lineWidth=1.4; vctx.globalAlpha=.6; vctx.beginPath();
+  for(let i=0;i<h0;i++){ const x=X(i),y=Yv(s.hist_tail[i]); i?vctx.lineTo(x,y):vctx.moveTo(x,y);} vctx.stroke(); vctx.globalAlpha=1;
+  vctx.strokeStyle=css('--rule-strong'); vctx.setLineDash([2,3]); vctx.beginPath(); vctx.moveTo(X(h0),6); vctx.lineTo(X(h0),dV.h-6); vctx.stroke(); vctx.setLineDash([]);
+  if(s.tau>=0){ vctx.strokeStyle=css('--break'); vctx.lineWidth=2; vctx.beginPath(); vctx.moveTo(X(h0+s.tau),4); vctx.lineTo(X(h0+s.tau),dV.h-4); vctx.stroke(); }
+  vctx.strokeStyle=css('--signal'); vctx.lineWidth=1.7; vctx.beginPath();
+  for(let i=0;i<cursor;i++){ const x=X(h0+i),y=Yv(s.values[i]); i?vctx.lineTo(x,y):vctx.moveTo(x,y);} vctx.stroke();
+  if(cursor>0){ const x=X(h0+cursor-1),y=Yv(s.values[cursor-1]); vctx.fillStyle=css('--signal'); vctx.beginPath(); vctx.arc(x,y,3.2,0,7); vctx.fill(); }
+  const Ys=v=>8+(1-v)*(dS.h-16);
+  sctx.clearRect(0,0,W,dS.h); sctx.strokeStyle=css('--grid'); sctx.lineWidth=1;
+  [0,0.5,1].forEach(v=>{ sctx.beginPath(); sctx.moveTo(padL,Ys(v)); sctx.lineTo(W-padR,Ys(v)); sctx.stroke(); });
+  if(s.tau>=0){ sctx.strokeStyle=css('--break'); sctx.lineWidth=2; sctx.globalAlpha=.85; sctx.beginPath(); sctx.moveTo(X(h0+s.tau),4); sctx.lineTo(X(h0+s.tau),dS.h-4); sctx.stroke(); sctx.globalAlpha=1; }
+  if(cursor>0){
+    sctx.beginPath(); sctx.moveTo(X(h0),Ys(0));
+    for(let i=0;i<cursor;i++) sctx.lineTo(X(h0+i),Ys(s.scores[i]));
+    sctx.lineTo(X(h0+cursor-1),Ys(0)); sctx.closePath();
+    sctx.fillStyle=css('--signal'); sctx.globalAlpha=.22; sctx.fill(); sctx.globalAlpha=1;
+    sctx.strokeStyle=css('--signal-deep'); sctx.lineWidth=2; sctx.beginPath();
+    for(let i=0;i<cursor;i++){ const x=X(h0+i),y=Ys(s.scores[i]); i?sctx.lineTo(x,y):sctx.moveTo(x,y);} sctx.stroke();
+    const x=X(h0+cursor-1),y=Ys(s.scores[cursor-1]); sctx.fillStyle=css('--signal-deep'); sctx.beginPath(); sctx.arc(x,y,3.4,0,7); sctx.fill();
+  }
+  const sc=cursor>0?s.scores[cursor-1]:0;
+  const big=document.getElementById('scoreBig'); big.textContent=sc.toFixed(3); big.style.color=css(sc>0.25?'--break':'--ink');
+  document.getElementById('stepReadout').textContent=cursor+' / '+N();
+  document.getElementById('valReadout').textContent=cursor>0?s.values[cursor-1].toFixed(3):'—';
+  const flag=document.getElementById('flag');
+  if(s.tau<0){ flag.className='flag clear'; flag.textContent=cursor>0?'no change — just noise':'streaming…'; }
+  else if(cursor<=s.tau){ flag.className='flag pre'; flag.textContent='so far, looks normal'; }
+  else { flag.className='flag post'; flag.textContent='● the real change happened'; }
+  document.getElementById('scrub').value=cursor;
+}
+function loop(ts){ if(!playing) return; if(lastTs==null) lastTs=ts; const dt=(ts-lastTs)/1000; lastTs=ts;
+  acc = Math.min(N(), acc + (+document.getElementById('speed').value)*dt);
+  cursor = Math.floor(acc); draw();               // cursor stays a whole number (array index)
+  if(cursor>=N()){ cursor=N(); draw(); stop(); return; } raf=requestAnimationFrame(loop); }
+function play(){ if(cursor>=N()) cursor=0; acc=cursor; playing=true; lastTs=null; document.getElementById('play').textContent='❚❚ Pause'; raf=requestAnimationFrame(loop); }
+function stop(){ playing=false; cancelAnimationFrame(raf); document.getElementById('play').textContent=cursor>=N()?'▶ Replay':'▶ Play'; }
+function reset(pl){ stop(); cursor=0; document.getElementById('scrub').max=N(); draw(); if(pl) play(); }
+
+const picker=document.getElementById('picker');
+DEMO.series.forEach((s,i)=>{ const b=document.createElement('button');
+  b.className='pick'+(s.kind==='nobreak'?' nb':''); b.setAttribute('role','tab'); b.setAttribute('aria-pressed', i===0?'true':'false');
+  b.innerHTML='<span class="dot"></span>'+(s.kind==='nobreak'?'Just noise':'A change — '+s.flavour);
+  b.onclick=()=>{ idx=i; [...picker.children].forEach((c,j)=>c.setAttribute('aria-pressed',j===i?'true':'false')); reset(!reduced); };
+  picker.appendChild(b); });
+document.getElementById('play').onclick=()=>playing?stop():play();
+document.getElementById('restart').onclick=()=>reset(true);
+document.getElementById('scrub').oninput=e=>{ stop(); cursor=+e.target.value; draw(); };
+document.getElementById('speed').onchange=()=>{ if(+document.getElementById('speed').value>=9999&&playing){ cursor=N(); draw(); stop(); } };
+addEventListener('resize',draw);
+if('ResizeObserver' in window) new ResizeObserver(()=>draw()).observe(valChart.parentElement);
+document.getElementById('scrub').max=N(); draw();
+if(!reduced) setTimeout(()=>play(),700);
+</script>
